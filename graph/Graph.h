@@ -1,7 +1,8 @@
 #pragma once
 
-#include<vector>
-#include<stack>
+#include <vector>
+#include <stack>
+#include <algorithm>
 
 enum class ColorN {
 	white, grey, black
@@ -72,10 +73,6 @@ public:
 		node[out]->AddLink(NewLink);*/
 	}
 
-	const std::vector<Link*>& GetAdj(Node* node) {
-		return node->GetLinks();
-	}
-
 	std::vector<Node*> SearchCycle(uint64_t number) {
 		std::vector<Node*> Cycle;
 		std::stack<std::pair<Node*, uint64_t>> trail;
@@ -86,23 +83,23 @@ public:
 		while (!trail.empty()) {
 			auto cur = trail.top();
 
-			std::vector<Link*> AdjLinks = GetAdj(cur.first);
+			std::vector<Link*> children = cur.first->GetLinks();
 
-			for (auto i = cur.second; i < AdjLinks.size(); ++i) {
-				if (AdjLinks[i]->node2->GetColor() == ColorN::grey) {
-					while (trail.top().first != AdjLinks[i]->node2) {
+			for (auto i = cur.second; i < children.size(); ++i) {
+				if (children[i]->node2->GetColor() == ColorN::grey) {
+					while (trail.top().first != children[i]->node2) {
 						Cycle.push_back(trail.top().first);
 						trail.pop();
 					}
 
-					Cycle.push_back(AdjLinks[i]->node2);
+					Cycle.push_back(children[i]->node2);
 
 					return Cycle;
 				}
-				else if (AdjLinks[i]->node2->GetColor() == ColorN::white) {
+				else if (children[i]->node2->GetColor() == ColorN::white) {
 					trail.top().second = i;
-					trail.push({ AdjLinks[i]->node2, 0 });
-					AdjLinks[i]->node2->ChangeColor(ColorN::grey);
+					trail.push({ children[i]->node2, 0 });
+					children[i]->node2->ChangeColor(ColorN::grey);
 					break;
 				}
 			}
@@ -126,18 +123,55 @@ public:
 		return revGraph;
 	}
 
-	void clear() {
+	void clean() {
 		for (auto node : nodes) {
 			node->ChangeColor(ColorN::white);
 		}
+	}
+
+	std::vector<Node*> dfs(Node* node) {
+		std::stack<std::pair<Node*, uint64_t>> deep;
+		std::vector<Node*> result;
+
+		node->ChangeColor(ColorN::black);
+		deep.push({ node, 0 });
+
+		while (!deep.empty()) {
+			std::vector<Link*> children = node->GetLinks();
+			Node* cur = deep.top().first;
+
+			for (auto i = 0; i < children.size(); ++i) {
+				if (children[i]->node2->GetColor() == ColorN::white) {
+					deep.top().second = i + 1;
+					deep.push({ children[i]->node2, 0 });
+				}
+			}
+
+			if (cur == deep.top().first) {
+				result.push_back(deep.top().first);
+				deep.pop();
+			}
+		}
+
+		return result;
 	}
 
 	std::vector<Node*> TopologicalSort(uint64_t start) {
 		std::vector<Node*> answer;
 		Node* cur = nodes[start];
 
-		this->clear();
-		/*To be continued*/
+		this->clean();
+		
+		for (auto node : nodes) {
+			if (node->GetColor() == ColorN::white) {
+				std::vector<Node*> result = dfs(node);
+				answer.insert(answer.end(), result.begin(), result.end());
+			}
+		}
+
+		std::reverse(answer.begin(), answer.end());
+
+		return answer;
 	}
 };
 

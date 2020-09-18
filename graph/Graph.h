@@ -143,7 +143,9 @@ public:
 			for (auto i = 0; i < children.size(); ++i) {
 				if (children[i]->node2->GetColor() == ColorN::white) {
 					deep.top().second = i + 1;
+					children[i]->node2->ChangeColor(ColorN::black);
 					deep.push({ children[i]->node2, 0 });
+					break;
 				}
 			}
 
@@ -156,9 +158,8 @@ public:
 		return result;
 	}
 
-	std::vector<Node*> TopologicalSort(uint64_t start) {
+	std::vector<Node*> TopologicalSort() {
 		std::vector<Node*> answer;
-		Node* cur = nodes[start];
 
 		this->clean();
 		

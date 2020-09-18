@@ -11,6 +11,17 @@ enum class ColorL {
 	green, blue, red, black
 };
 
+class Node;
+
+struct Link {
+	int64_t val;
+	ColorL color;
+	Node* node1;
+	Node* node2;
+
+	Link(int64_t val, Node* node1, Node* node2) : val(val), color(ColorL::black), node1(node1), node2(node2) {}
+};
+
 class Node {
 	uint64_t number;
 	ColorN color;
@@ -34,23 +45,18 @@ public:
 	ColorN GetColor() {
 		return color;
 	}
-};
 
-struct Link {
-	int64_t val;
-	ColorL color;
-	Node* node1;
-	Node* node2;
-
-	Link(int64_t val, Node* node1, Node* node2) : val(val), color(ColorL::black), node1(node1), node2(node2) {}
+	const std::vector<Link*>& GetLinks() {
+		return links;
+	}
 };
 
 class Graph{
 	std::vector<Node*> node;
-	std::vector<std::vector<Link*>> graph;
+	std::vector<Link*> links;
 
 public:
-	Graph(uint64_t number) : graph(number) {
+	Graph(uint64_t number) {
 		for (uint64_t i = 0; i < number; ++i) {
 			node.push_back(new Node(i));
 		}
@@ -59,15 +65,14 @@ public:
 	void AddLink(uint64_t in, uint64_t out, int64_t val) {
 		Link* NewLink = new Link(val, node[in], node[out]);
 
-		graph.at(in).at(out) = NewLink;
 		node[in]->AddLink(NewLink);
 
 		/*graph.at(out).at(in) = NewLink;
 		node[out]->AddLink(NewLink);*/
 	}
 
-	const std::vector<Link*>& GetAdj(Node* number) {
-		return graph.at(number->GetNumber());
+	const std::vector<Link*>& GetAdj(Node* node) {
+		return node->GetLinks();
 	}
 
 	std::vector<Node*> SearchCycle(uint64_t number) {

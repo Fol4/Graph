@@ -69,8 +69,7 @@ public:
 
 		nodes[in]->AddLink(NewLink);
 
-		/*graph.at(out).at(in) = NewLink;
-		node[out]->AddLink(NewLink);*/
+		links.push_back(NewLink);
 	}
 
 	std::vector<Node*> SearchCycle(uint64_t number) {
@@ -113,7 +112,7 @@ public:
 		return Cycle;
 	}
 
-	Graph ReverseGraph() {
+	Graph reverse() {
 		Graph revGraph(size);
 
 		for (auto link : links) {
@@ -123,24 +122,28 @@ public:
 		return revGraph;
 	}
 
-	void clean() {
+	void clear() {
 		for (auto node : nodes) {
 			node->ChangeColor(ColorN::white);
 		}
 	}
 
-	std::vector<Node*> dfs(Node* node) {
+	std::vector<Node*> dfs(uint64_t number) {
 		std::stack<std::pair<Node*, uint64_t>> deep;
 		std::vector<Node*> result;
 
-		node->ChangeColor(ColorN::black);
-		deep.push({ node, 0 });
+		if (nodes[number]->GetColor() == ColorN::black) {
+			return result;
+		}
+
+		nodes[number]->ChangeColor(ColorN::black);
+		deep.push({ nodes[number], 0 });
 
 		while (!deep.empty()) {
-			std::vector<Link*> children = node->GetLinks();
-			Node* cur = deep.top().first;
+			std::vector<Link*> children = deep.top().first->GetLinks();
+			std::pair<Node*, uint64_t> cur = deep.top();
 
-			for (auto i = 0; i < children.size(); ++i) {
+			for (auto i = cur.second; i < children.size(); ++i) {
 				if (children[i]->node2->GetColor() == ColorN::white) {
 					deep.top().second = i + 1;
 					children[i]->node2->ChangeColor(ColorN::black);
@@ -149,7 +152,7 @@ public:
 				}
 			}
 
-			if (cur == deep.top().first) {
+			if (cur.first == deep.top().first) {
 				result.push_back(deep.top().first);
 				deep.pop();
 			}
@@ -161,11 +164,12 @@ public:
 	std::vector<Node*> TopologicalSort() {
 		std::vector<Node*> answer;
 
-		this->clean();
+		clear();
 		
 		for (auto node : nodes) {
-			if (node->GetColor() == ColorN::white) {
-				std::vector<Node*> result = dfs(node);
+			std::vector<Node*> result = dfs(node->GetNumber());
+
+			if (!result.empty()) {
 				answer.insert(answer.end(), result.begin(), result.end());
 			}
 		}
@@ -173,6 +177,24 @@ public:
 		std::reverse(answer.begin(), answer.end());
 
 		return answer;
+	}
+
+	std::vector<std::vector<Node*>>  findSCC() {
+		std::vector<std::vector<Node*>> SCC;
+		clear();
+
+		Graph revGraph = reverse();
+		std::vector<Node*> sorted = TopologicalSort();
+
+		for (auto node : sorted) {
+			std::vector<Node*> result = revGraph.dfs(node->GetNumber());
+
+			if (!result.empty()) {
+				SCC.push_back(result);
+			}
+		}
+
+		return SCC;
 	}
 };
 

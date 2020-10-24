@@ -25,11 +25,12 @@ struct Link {
 
 class Node {
 	uint64_t number;
+	uint64_t distance;
 	ColorN color;
 	std::vector<Link*> links;
 
 public:
-	Node(uint64_t number) : number(number), color(ColorN::white) {}
+	Node(uint64_t number) : number(number), color(ColorN::white), distance(-1) {}
 
 	void AddLink(Link* link) {
 		links.push_back(link);
@@ -50,12 +51,21 @@ public:
 	const std::vector<Link*>& GetLinks() {
 		return links;
 	}
+
+	uint64_t GetDistance() {
+		return distance;
+	}
+
+	void ChangeDistance(uint64_t newDist) {
+		distance = newDist;
+	}
 };
 
 class Graph{
 	std::vector<Node*> nodes;
 	std::vector<Link*> links;
 	uint64_t size;
+	uint64_t maximum = 0;
 
 public:
 	Graph(uint64_t size) : size(size){
@@ -68,7 +78,7 @@ public:
 		Link* NewLink = new Link(val, nodes[in], nodes[out]);
 
 		nodes[in]->AddLink(NewLink);
-
+		maximum += val;
 		links.push_back(NewLink);
 	}
 
@@ -195,6 +205,58 @@ public:
 		}
 
 		return SCC;
+	}
+
+	std::vector<int64_t> dijkstra(uint64_t number) {
+		clear();
+		for (auto node : nodes) {
+			node->ChangeDistance(maximum*links.size());
+		}
+
+		nodes[number]->ChangeDistance(0);
+		std::vector<int64_t> cache (nodes.size(), -1);
+
+		for (auto i = 0; i < nodes.size(); ++i) {
+			uint64_t now = -1;
+
+			for (auto j = 0; j < nodes.size(); ++j) {
+				if ((nodes[j]->GetColor() == ColorN::white) and (now == -1 or nodes[j]->GetDistance() < nodes[now]->GetDistance())) {
+					now = j;
+				}
+			}
+
+			if (nodes[now]->GetDistance() == maximum * links.size()) {
+				break;
+			}
+
+			nodes[now]->ChangeColor(ColorN::black);
+			std::vector<Link*> neighbours = nodes[now]->GetLinks();
+
+			for (auto link : neighbours) {
+				if (nodes[now]->GetDistance() + link->val < link->node2->GetDistance()) {
+					link->node2->ChangeDistance(nodes[now]->GetDistance() + link->val);
+					cache[link->node2->GetNumber()] = now;
+				}
+			}
+		}
+
+		return cache;
+	}
+
+	std::vector<Node*> dijkstra_path(uint64_t start, uint64_t end) {
+		std::vector<int64_t> cache = dijkstra(start);
+		std::vector<Node*> path;
+
+		while (end != start) {
+			if (end == -1) {
+				return {};
+			}
+			path.push_back(nodes[end]);
+			end = cache[end];
+		}
+
+		path.push_back(nodes[start]);
+		return path;
 	}
 };
 
